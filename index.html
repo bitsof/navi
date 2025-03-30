@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual Pet</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="pet-container">
+    <div id="pet" draggable="true">
+      <div id="pet-name">Buddy</div>
+      <div id="pet-image">🐱</div>
+      <div id="pet-stats">
+        <div class="stat">
+          <span>Hunger:</span>
+          <div class="progress-bar">
+            <div id="hunger-bar" class="progress"></div>
+          </div>
+        </div>
+        <div class="stat">
+          <span>Happiness:</span>
+          <div class="progress-bar">
+            <div id="happiness-bar" class="progress"></div>
+          </div>
+        </div>
+        <div class="stat">
+          <span>Energy:</span>
+          <div class="progress-bar">
+            <div id="energy-bar" class="progress"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="pet-controls">
+      <button id="feed-btn">Feed</button>
+      <button id="play-btn">Play</button>
+      <button id="sleep-btn">Sleep</button>
+    </div>
+  </div>
+
+  <script src="js/renderer.js"></script>
+</body>
+</html> 

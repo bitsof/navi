@@ -1,0 +1,159 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  background-color: transparent;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  -webkit-app-region: no-drag;
+}
+
+#pet-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 30px;
+}
+
+#pet {
+  cursor: grab;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  -webkit-app-region: drag;
+}
+
+#pet:active {
+  cursor: grabbing;
+}
+
+#pet-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 5px;
+  text-shadow: 0 0 5px white, 0 0 10px white;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+#pet-image {
+  font-size: 60px;
+  text-align: center;
+  user-select: none;
+  transition: transform 0.3s ease;
+  margin-bottom: 10px;
+}
+
+#pet-image:hover {
+  transform: scale(1.1);
+}
+
+.feeding #pet-image {
+  animation: eat 1s ease;
+}
+
+@keyframes eat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+#pet-stats {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 180px;
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+.stat {
+  margin-bottom: 7px;
+}
+
+.stat span {
+  font-size: 13px;
+  color: #333;
+  font-weight: bold;
+}
+
+.progress-bar {
+  height: 10px;
+  background-color: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.progress {
+  height: 100%;
+  width: 50%;
+  transition: width 0.5s ease;
+}
+
+#hunger-bar {
+  background-color: #ff9f43;
+}
+
+#happiness-bar {
+  background-color: #ff6b6b;
+}
+
+#energy-bar {
+  background-color: #54a0ff;
+}
+
+#pet-controls {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 5px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  opacity: 1;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6c5ce7;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+button:hover {
+  background-color: #5b4acf;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.95);
+} 
