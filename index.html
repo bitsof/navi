@@ -4,40 +4,20 @@
   <meta charset="UTF-8">
   <title>Virtual Pet</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Content security policy to allow scripts -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
 </head>
 <body>
-  <div id="pet-container">
-    <div id="pet" draggable="true">
-      <div id="pet-name">Buddy</div>
-      <div id="pet-image">🐱</div>
-      <div id="pet-stats">
-        <div class="stat">
-          <span>Hunger:</span>
-          <div class="progress-bar">
-            <div id="hunger-bar" class="progress"></div>
-          </div>
-        </div>
-        <div class="stat">
-          <span>Happiness:</span>
-          <div class="progress-bar">
-            <div id="happiness-bar" class="progress"></div>
-          </div>
-        </div>
-        <div class="stat">
-          <span>Energy:</span>
-          <div class="progress-bar">
-            <div id="energy-bar" class="progress"></div>
-          </div>
-        </div>
-      </div>
-      <div id="pet-controls">
-        <button id="feed-btn">Feed</button>
-        <button id="play-btn">Play</button>
-        <button id="sleep-btn">Sleep</button>
-      </div>
-    </div>
+  <!-- Main container for the pet and UI -->
+  <div id="app-container">
+    <!-- Plugin areas will be added dynamically -->
+    <div id="plugins-area"></div>
+    
+    <!-- Debug information (visible only in dev mode) -->
+    <div id="debug-info" class="debug-panel"></div>
   </div>
 
-  <script type="module" src="js/renderer.js"></script>
+  <!-- Load the renderer script as a module -->
+  <script src="js/renderer.js" type="module"></script>
 </body>
 </html> 
