@@ -1,176 +1,282 @@
+/* Reset */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
+/* Main styling */
 body {
   font-family: Arial, sans-serif;
-  overflow: hidden;
   background-color: transparent;
-  height: 100vh;
+  overflow: hidden;
   width: 100vw;
-  user-select: none;
-  -webkit-app-region: no-drag;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-#pet-container {
-  position: relative;
+/* Main app container */
+#app-container {
+  width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Plugins area */
+#plugins-area {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  overflow: visible;
 }
 
-#pet {
-  cursor: grab;
-  position: relative;
+/* Core display plugin */
+.core-display-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* -webkit-app-region: drag; */ /* Removed this as we handle drag manually */
-}
-
-#pet:active,
-#pet.holding {
-  cursor: grabbing;
-  transform: scale(1.05); /* Slightly larger when held */
-  filter: drop-shadow(0 0 5px rgba(0,0,0,0.3)); /* Add a subtle shadow */
-}
-
-#pet-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-  margin-bottom: 5px;
-  text-shadow: 0 0 5px white, 0 0 10px white;
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 3px 10px;
-  border-radius: 10px;
-  /* pointer-events: none; */ /* Removed - allow direct clicks */
-}
-
-#pet-image {
-  font-size: 60px;
-  text-align: center;
-  user-select: none;
-  transition: transform 0.3s ease;
+  width: 100%;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 10px;
-  /* pointer-events: none; */ /* Removed - allow direct clicks */
+  z-index: 100;
 }
 
-#pet-image:hover {
+/* Pet element */
+.pet {
+  font-size: 64px;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 10;
+}
+
+/* Pet states */
+.pet.idle {
+  /* Default state */
+}
+
+.pet.walking {
+  animation: walking 1s infinite alternate;
+}
+
+.pet.interacting {
+  animation: bounce 0.5s infinite alternate;
+}
+
+.pet.sleeping {
+  transform: rotate(90deg);
+  filter: brightness(0.7);
+}
+
+.pet.dragging {
+  cursor: grabbing;
   transform: scale(1.1);
 }
 
-.feeding #pet-image {
-  animation: eat 1s ease;
+/* Pet stats */
+.pet-stats {
+  width: 100%;
+  margin-bottom: 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 10px;
 }
 
-.walking #pet-image {
-  animation: walk 0.5s infinite alternate;
-}
-
-@keyframes eat {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-@keyframes walk {
-  0% { transform: translateY(0) rotate(-5deg); }
-  100% { transform: translateY(-5px) rotate(5deg); }
-}
-
-#pet-stats {
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 5px;
+.pet-name {
+  text-align: center;
   margin-bottom: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: 180px;
-  transition: opacity 0.3s ease;
-  opacity: 0; /* Start hidden */
-  pointer-events: none; /* Start non-interactive */
-  z-index: 999; /* Ensure stats are below controls */
-  -webkit-app-region: no-drag;
+  font-size: 1.2em;
 }
 
-.stat {
-  margin-bottom: 7px;
+.meter-container {
+  margin-bottom: 8px;
+  width: 100%;
 }
 
-.stat span {
-  font-size: 13px;
-  color: #333;
-  font-weight: bold;
+.meter-label {
+  margin-bottom: 2px;
+  font-size: 0.9em;
 }
 
-.progress-bar {
-  height: 10px;
-  background-color: #eee;
+.meter {
+  width: 100%;
+  height: 15px;
+}
+
+/* Pet controls */
+.pet-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.pet-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 15px;
   border-radius: 5px;
-  overflow: hidden;
-  margin-top: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.9em;
 }
 
-.progress {
-  height: 100%;
-  width: 50%;
-  transition: width 0.5s ease;
+.pet-button:hover {
+  background-color: #45a049;
 }
 
-#hunger-bar {
-  background-color: #ff9f43;
+.pet-button:active {
+  background-color: #3e8e41;
 }
 
-#happiness-bar {
-  background-color: #ff6b6b;
+.pet-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
-#energy-bar {
-  background-color: #54a0ff;
+/* Animations */
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
 }
 
-#pet-controls {
-  position: relative;
+@keyframes walking {
+  0% { transform: translateX(-5px); }
+  100% { transform: translateX(5px); }
+}
+
+/* Plugin-specific styles */
+/* Walking target marker */
+.walk-target {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(255, 0, 0, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Context menu styles */
+.context-menu {
+  position: absolute;
+  min-width: 150px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 5px 0;
+  z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  /* Remove opacity to make visible when displayed */
+  opacity: 1;
+  transition: opacity 0.1s ease;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.context-menu-item:hover {
+  background: #f0f0f0;
+}
+
+.menu-item-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.menu-item-label {
+  flex-grow: 1;
+}
+
+/* Add divider between menu sections */
+.context-menu-divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 5px 0;
+}
+
+/* Debug panel */
+.debug-panel {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 300px;
+  max-height: 200px;
+  overflow: auto;
+  opacity: 0.9;
+  z-index: 9999;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  display: none;
+}
+
+.debug-panel p {
+  margin: 5px 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 5px;
+}
+
+/* Plugin containers */
+.plugin-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 250px;
+  margin: 5px 0;
+}
+
+/* Interaction plugin */
+.interactions-container {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-top: 5px;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 10px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  opacity: 0; /* Start hidden */
-  pointer-events: none; /* Start non-interactive */
-  transition: opacity 0.3s ease;
-  -webkit-app-region: no-drag;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  width: 100%;
 }
 
-button {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 8px;
-  background-color: #6c5ce7;
+.interaction-button {
+  margin: 5px;
+  padding: 8px 12px;
+  background-color: #4a6baf;
   color: white;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: all 0.2s;
-  -webkit-app-region: no-drag;
+  transition: background-color 0.2s;
 }
 
-button:hover {
-  background-color: #5b4acf;
-  transform: scale(1.05);
+.interaction-button:hover {
+  background-color: #3a5a9f;
 }
 
-button:active {
-  transform: scale(0.95);
+.interaction-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 } 

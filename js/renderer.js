@@ -1,210 +1,157 @@
-// DOM Elements
-const petElement = document.getElementById('pet');
-const petImage = document.getElementById('pet-image');
-const petName = document.getElementById('pet-name');
-const petStats = document.getElementById('pet-stats');
-const petControls = document.getElementById('pet-controls');
-const hungerBar = document.getElementById('hunger-bar');
-const happinessBar = document.getElementById('happiness-bar');
-const energyBar = document.getElementById('energy-bar');
-const feedBtn = document.getElementById('feed-btn');
-const playBtn = document.getElementById('play-btn');
-const sleepBtn = document.getElementById('sleep-btn');
+// js/renderer.js - Main renderer process entry point
+// Using the ECS (Entity-Component-System) architecture for state management
 
-// Import Features
-import { walkingPlugin } from './features/walking.js';
+// Set development mode if loaded with ?dev in URL
+window.DEV_MODE = window.location.search.includes('dev');
 
-// Global State (received from main process)
-let currentPetState = null; // Holds the latest state received
-let isHoldingPet = false; // Tracks if the mouse is currently down on the pet
-let allDisplaysInfo = null;
-let uiVisible = false;
+// Import ECS integration for renderer
+import ecsIntegration from './ecs/integration.js';
+import pluginSystem from './ecs/plugins/pluginSystem.js';
 
-// Update UI based on the currentPetState
-function updatePetUI() {
-  if (!currentPetState) return;
-  hungerBar.style.width = `${100 - currentPetState.hunger}%`;
-  happinessBar.style.width = `${currentPetState.happiness}%`;
-  energyBar.style.width = `${currentPetState.energy}%`;
-  petName.textContent = currentPetState.name || 'Buddy';
-  petImage.innerHTML = currentPetState.mood; // Use mood from state
+// Global state 
+let ecsWorld = null;
+let mainPetEntity = null;
 
-  // Visual feedback for holding (based on status, not just mouse down)
-  if (currentPetState.status === 'interacting') { 
-    // Add holding class ONLY if the mouse is ALSO down (isHoldingPet)
-    // This prevents the class being added during button interactions
-    if (isHoldingPet) {
-      petElement.classList.add('holding');
-    } else {
-      // Ensure holding class is removed if mouse is up but status is still interacting (e.g., during feeding anim)
-      petElement.classList.remove('holding'); 
+// Show debug panel in dev mode and initialize ECS
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.DEV_MODE) {
+    const debugPanel = document.getElementById('debug-info');
+    if (debugPanel) {
+      debugPanel.style.display = 'block';
+      updateDebugPanel('Development mode enabled');
     }
-  } else {
-    petElement.classList.remove('holding');
-  }
-}
-
-// Function to update pet position (only relevant for main process now)
-async function updatePetPosition(position) {
-    if (typeof position?.x !== 'number' || typeof position?.y !== 'number' || isNaN(position.x) || isNaN(position.y)) {
-      console.error("Attempted to update position with invalid data:", position);
-      return; 
-    }
-    // Update local state's position immediately for responsiveness if needed by walking plugin
-    // if (currentPetState) {
-    //     currentPetState.x = position.x;
-    //     currentPetState.y = position.y;
-    // }
-    await window.api.updatePetPosition(position);
-}
-
-// Function to set pet status in main process
-async function setPetStatus(status) {
-    console.log("Renderer requesting status change:", status);
-    await window.api.setPetStatus(status);
-    // Rely on update from main via onPetStateUpdate to update local state and UI
-}
-
-// Initialize
-async function initialize() {
-  hideUI(); 
-  allDisplaysInfo = await window.api.getDisplaysInfo();
-  currentPetState = await window.api.getPetState(); 
-  
-  if (!currentPetState || typeof currentPetState.x !== 'number' || typeof currentPetState.y !== 'number') {
-      console.error("Failed to get valid initial state. Using fallback.");
-      currentPetState = { x: 100, y: 100, name: 'Buddy', hunger: 50, happiness: 50, energy: 50, mood: '🐱', status: 'idle' };
-      // If falling back, maybe try to set this position in main?
-      // await window.api.updatePetPosition({ x: currentPetState.x, y: currentPetState.y });
   }
   
-  updatePetUI();
+  // Initialize the ECS system when DOM is ready
+  initializeEcs();
+});
 
-  const walkingEnabled = true;
-  if (walkingEnabled) {
-    walkingPlugin.initialize({
-      petElement: petElement,
-      updatePetPosition: updatePetPosition, 
-      getPetState: () => currentPetState, 
-      getAllDisplaysInfo: () => allDisplaysInfo, 
-      isDragging: () => isHoldingPet, // Pass holding state
-      setStatus: setPetStatus 
-    });
+/**
+ * Initializes the ECS world in the renderer process
+ */
+async function initializeEcs() {
+  console.log('>>> initializeEcs called');
+  console.log('Initializing ECS in renderer process...');
+  updateDebugPanel('Initializing ECS world...');
+  
+  try {
+    if (!window.api) {
+      throw new Error('API not available - preload script may have failed to load');
+    }
+    
+    // Initialize the ECS world
+    const ecs = ecsIntegration.initializeRenderer(window.api);
+    ecsWorld = ecs.world;
+    
+    // The main pet entity will be available after initialization
+    // It's handled inside the ECS initialization process
+    
+    // Log initialization success
+    console.log('ECS world initialized in renderer');
+    updateDebugPanel('ECS world initialized successfully');
+    
+    // Initialize the context menu system UI
+    // We'll use a slightly longer delay to ensure the pet element is created first
+    setTimeout(() => {
+      const contextMenuSystem = ecsWorld.systems.get('contextMenu');
+      if (contextMenuSystem) {
+        contextMenuSystem.createMenuElement();
+        updateDebugPanel('Context menu system initialized');
+        console.log('Context menu system initialized and ready');
+      } else {
+        console.error('Context menu system not found');
+        updateDebugPanel('Error: Context menu system not found');
+      }
+    }, 1000); // Add a delay to ensure systems are registered and pet element exists
+    
+    // Setup UI event listeners for interacting with the pet
+    setupUiEventListeners();
+    
+    // Load plugins using our new ECS-based plugin system
+    await loadPlugins(ecsWorld);
+  } catch (error) {
+    console.error('Error initializing ECS:', error);
+    updateDebugPanel(`Error initializing ECS: ${error.message}`);
   }
+}
 
-  window.api.onPetStateUpdate((newState) => {
-    // console.log('Received state update from main:', newState);
-    currentPetState = newState;
-    updatePetUI();
+/**
+ * Load plugins using the ECS plugin system
+ */
+async function loadPlugins(world) {
+  try {
+    // Get initial pet state to find which plugins to load
+    const petState = await window.api.getPetState();
+    
+    // Determine active plugins
+    const activePlugins = petState?.pluginSettings?.active || 
+                          ['coreDisplay', 'walking', 'dragging', 'interactions'];
+    
+    updateDebugPanel(`Loading plugins: ${activePlugins.join(', ')}`);
+    
+    // Load all active plugins
+    const loadedPlugins = await pluginSystem.loadPlugins(activePlugins, world);
+    
+    updateDebugPanel(`Successfully loaded ${loadedPlugins.length} plugins`);
+  } catch (error) {
+    console.error('Error loading plugins:', error);
+    updateDebugPanel(`Error loading plugins: ${error.message}`);
+  }
+}
+
+/**
+ * Setup UI event listeners for pet interactions
+ */
+function setupUiEventListeners() {
+  // Listen for window clicks for walking
+  // TODO: Verify if walking plugin handles background clicks.
+  document.addEventListener('click', (event) => {
+    // Skip if clicking on UI elements instead of the window
+    if (event.target.closest('.pet-button') || 
+        event.target.closest('#pet') ||
+        event.target.closest('#pet-stats') ||
+        event.target.closest('.plugin-container')) { // Added check for any plugin container
+      return;
+    }
+    
+    // Convert client coordinates to screen coordinates for walking
+    const screenX = window.screenX + event.clientX;
+    const screenY = window.screenY + event.clientY;
+    
+    // Let the ECS integration handle the walk command
+    ecsIntegration.startWalking(screenX, screenY); 
+    updateDebugPanel(`Walking to: ${screenX}, ${screenY}`);
+  });
+  
+  // Setup ECS event listeners
+  window.api.onEcsEvent('appearanceUpdated', (data) => {
+    updateDebugPanel(`Pet appearance updated: ${data.appearance.status}`);
+  });
+  
+  window.api.onEcsEvent('positionUpdated', (data) => {
+    updateDebugPanel(`Pet position updated: ${Math.round(data.x)}, ${Math.round(data.y)}`);
+  });
+  
+  window.api.onEcsEvent('targetReached', (data) => {
+    updateDebugPanel(`Pet reached target position: ${Math.round(data.x)}, ${Math.round(data.y)}`);
   });
 }
 
-// Prevent default context menu
-document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-// --- UI Visibility --- 
-function showUI() {
-  if (uiVisible) return;
-  uiVisible = true;
-  petStats.style.opacity = '1';
-  petStats.style.pointerEvents = 'auto';
-  petControls.style.opacity = '1';
-  petControls.style.pointerEvents = 'auto';
-}
-
-function hideUI() {
-  if (!uiVisible) return;
-  uiVisible = false;
-  petStats.style.opacity = '0';
-  petStats.style.pointerEvents = 'none';
-  petControls.style.opacity = '0';
-  petControls.style.pointerEvents = 'none';
-}
-
-// --- Click vs Hold Handling --- 
-
-// Check if an element or its parents are part of the interactive controls/stats
-function isInteractiveUI(element) {
-  return petControls.contains(element) || petStats.contains(element);
-}
-
-document.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return; // Only left click
-
-  // Start potential hold ONLY if clicking directly on the pet image or name
-  if (e.target === petImage || e.target === petName) {
-      isHoldingPet = true; 
-      walkingPlugin.stop(); // Stop any walk
-      setPetStatus('interacting'); // Set status via IPC -> main -> state -> renderer update
-      petElement.style.cursor = 'grabbing'; 
-      // updatePetUI(); // Let the state update handle the visual change
+/**
+ * Helper to update the debug panel
+ * @param {string} message - Message to display
+ */
+function updateDebugPanel(message) {
+  if (!window.DEV_MODE) return;
+  
+  const debugPanel = document.getElementById('debug-info');
+  if (debugPanel) {
+    const timestamp = new Date().toLocaleTimeString();
+    const msgElement = document.createElement('p');
+    msgElement.textContent = `[${timestamp}] ${message}`;
+    debugPanel.appendChild(msgElement);
+    
+    // Scroll to bottom
+    debugPanel.scrollTop = debugPanel.scrollHeight;
   }
-});
-
-document.addEventListener('mousemove', (e) => {
-  // No window dragging logic here anymore
-});
-
-document.addEventListener('mouseup', (e) => {
-  if (e.button !== 0) return;
-
-  const wasHolding = isHoldingPet; // Store if we were holding before resetting
-  isHoldingPet = false; // Always reset holding flag on mouseup
-
-  if (wasHolding) {
-      // If we were holding, always reset status to idle
-      setPetStatus('idle'); 
-      petElement.style.cursor = 'grab'; 
-      // updatePetUI(); // Let the state update handle the visual change
-
-      // Treat the release as a click to toggle UI
-      if (uiVisible) {
-        hideUI();
-      } else {
-        showUI();
-      }
-  } else {
-      // Handle clicks outside the pet/UI that should hide the UI
-      if (uiVisible && !petElement.contains(e.target) && !isInteractiveUI(e.target)) {
-        hideUI();
-      }
-  }
-});
-
-// --- Interactions --- 
-
-// Helper function to handle interactions
-async function handleInteraction(interactionPromise) {
-  walkingPlugin.stop(); // Stop walk before interaction
-  const newState = await interactionPromise; // Calls main process which sets status to 'interacting' via the Pet class method
-  if (newState) {
-    currentPetState = newState; // Update local state immediately from return
-    updatePetUI();
-    // Set status back to idle *after* the interaction completes and state is received
-    setTimeout(() => setPetStatus('idle'), 100); // Reset status after interaction completes
-  }
-}
-
-feedBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  petImage.parentElement.classList.add('feeding');
-  await handleInteraction(window.api.feedPet());
-  setTimeout(() => petImage.parentElement.classList.remove('feeding'), 1000);
-});
-
-playBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  await handleInteraction(window.api.playWithPet());
-});
-
-sleepBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  await handleInteraction(window.api.petSleep());
-});
-
-// Prevent mousedown on controls/stats from bubbling up 
-petControls.addEventListener('mousedown', (e) => e.stopPropagation());
-petStats.addEventListener('mousedown', (e) => e.stopPropagation());
-
-// Initialize
-initialize(); 
+} 

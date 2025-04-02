@@ -1,0 +1,9 @@
+{
+  "currentPetType": "defaultCat",
+  "activePlugins": [
+    "coreDisplay",
+    "walking",
+    "dragging",
+    "interactions"
+  ]
+} 
